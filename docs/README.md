@@ -10,6 +10,7 @@ Este directorio es el punto único de entrada para la documentación humana del 
 | [Modelo de dominio](DOMAIN_MODEL.md) | Aggregates, eventos, invariantes, familias, MCP y borradores | Fuente principal del backend |
 | [Cuentas y login](ACCOUNTS_AND_LOGIN.md) | Email, contraseña, sesiones y recuperación | Reemplaza las decisiones antiguas de acceso |
 | [Despliegue en Railway](DEPLOY_RAILWAY.md) | PostgreSQL, backend, frontend, variables y diagnóstico | Guía operativa |
+| [Roadmap vigente](ROADMAP.md) | prioridades técnicas actuales y criterios de cierre | Planificación activa |
 ## Documentación técnica
 
 | Documento | Contenido |
@@ -34,6 +35,7 @@ Se conservan como registro de decisiones, no como trabajo pendiente vigente:
 
 - [Plan histórico de gastos diarios](HISTORICAL_DAILY_EXPENSES_PLAN.md)
 - [Roadmap histórico](HISTORICAL_ROADMAP.md)
+- [Spike histórico del modelo de dominio](HISTORICAL_DOMAIN_SPIKE.md)
 
 ## Documentación operativa junto al código
 

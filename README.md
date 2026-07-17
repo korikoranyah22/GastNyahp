@@ -24,6 +24,7 @@ La documentación del proyecto está centralizada en [`docs/`](docs/README.md):
 - [Despliegue en Railway](docs/DEPLOY_RAILWAY.md)
 - [Arquitectura técnica](docs/ARCHITECTURE.md)
 - [Guía de desarrollo](docs/DEVELOPMENT.md)
+- [Roadmap vigente](docs/ROADMAP.md)
 - [Planes históricos](docs/README.md#planes-históricos)
 
 ## Seguridad

@@ -1,5 +1,8 @@
 # GastNyahp — Plan de próximas acciones
 
+> **Archivado.** Esta fotografía corresponde al 27 de febrero de 2026 y contiene tareas ya implementadas.
+> No usar como backlog: consultá [ROADMAP.md](ROADMAP.md).
+
 > Generado: 2026-02-27
 > Basado en: [`FUNCTIONAL_SPEC.md`](FUNCTIONAL_SPEC.md) vs estado actual de la app
 

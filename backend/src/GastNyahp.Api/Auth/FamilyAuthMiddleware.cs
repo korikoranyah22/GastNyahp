@@ -23,6 +23,10 @@ public sealed class FamilyAuthMiddleware(RequestDelegate next)
 
         var header = ctx.Request.Headers.Authorization.ToString();
         var token = header.StartsWith("Bearer ", StringComparison.Ordinal) ? header["Bearer ".Length..].Trim() : null;
+        // El transporte WebSocket del navegador no puede enviar Authorization. SignalR usa access_token en el
+        // query string; lo aceptamos solo para el hub para no ampliar la superficie de autenticación REST/MCP.
+        if (token is null && ctx.Request.Path.StartsWithSegments("/hubs/updates"))
+            token = ctx.Request.Query["access_token"].FirstOrDefault();
         // Members and agent keys share the same lookup â€” an MCP agent authenticates exactly like a person,
         // just with a revocable data-only credential (role "Agent").
         var credential = token is null ? null : await families.ResolveCredentialAsync(token, ctx.RequestAborted);

@@ -4,7 +4,7 @@
  * El tema se aplica como atributo `data-theme` en <html>.
  * Se persiste en localStorage bajo la clave 'gastnyahp_theme'.
  *
- * Patrón de módulo igual que autoSave.js: estado + Set de listeners + notify().
+ * Estado de preferencias + Set de listeners + notify().
  */
 
 const LS_KEY  = 'gastnyahp_theme'

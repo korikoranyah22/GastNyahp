@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using GastNyahp.Api.Auth;
+using GastNyahp.Api.Realtime;
 using GastNyahp.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -10,6 +11,7 @@ builder.Services.AddControllers().AddJsonOptions(o =>
 builder.Services.AddOpenApi();
 builder.Services.AddGastNyahpInfrastructure(builder.Configuration);
 builder.Services.AddSingleton<OAuthFlowStore>();
+builder.Services.AddSignalR();
 
 // MCP lives IN this host (not a separate process as the generic skill suggests) because the InMemory event
 // store isn't shareable across processes; with the Postgres event store it can be extracted later. Tools read
@@ -32,8 +34,10 @@ app.MapGet("/health/live", () => Results.Json(new { status = "ok" }));
 // Possession-based auth: Bearer member-token → family. Everything except health/openapi/admin-gate/family
 // entry points requires a credential (DOMAIN_MODEL.md §17).
 app.UseMiddleware<FamilyAuthMiddleware>();
+app.UseMiddleware<RealtimeChangeMiddleware>();
 
 app.MapControllers();
+app.MapHub<FamilyUpdatesHub>("/hubs/updates");
 app.MapMcp("/mcp"); // requires a bearer credential like any data route — /mcp is not in the anonymous allowlist
 
 app.Run();

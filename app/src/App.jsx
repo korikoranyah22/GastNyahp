@@ -17,6 +17,7 @@ import DualPayPage from './pages/dualpay/DualPayPage'
 import PeoplePage from './pages/people/PeoplePage'
 import PriceHistoryPage from './pages/price-history/PriceHistoryPage'
 import AuthScreen from './pages/auth/AuthScreen'
+import { useFamilyUpdates } from './hooks/useFamilyUpdates'
 
 // El backend es la fuente de verdad: sin credencial de familia no hay app. La credencial vive en este
 // dispositivo (localStorage) — posesión = identidad, la traducción moderna de "poseer el JSON".
@@ -25,6 +26,7 @@ export default function App() {
   const initAuth = useStore((s) => s.initAuth)
 
   useEffect(() => { initAuth() }, [initAuth])
+  useFamilyUpdates(authStatus === 'ready')
 
   if (authStatus === 'init' || authStatus === 'loading') {
     return (

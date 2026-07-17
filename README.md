@@ -22,6 +22,8 @@ La documentación del proyecto está centralizada en [`docs/`](docs/README.md):
 - [Modelo de dominio](docs/DOMAIN_MODEL.md)
 - [Cuentas, sesiones y recuperación](docs/ACCOUNTS_AND_LOGIN.md)
 - [Despliegue en Railway](docs/DEPLOY_RAILWAY.md)
+- [Arquitectura técnica](docs/ARCHITECTURE.md)
+- [Guía de desarrollo](docs/DEVELOPMENT.md)
 - [Planes históricos](docs/README.md#planes-históricos)
 
 ## Seguridad

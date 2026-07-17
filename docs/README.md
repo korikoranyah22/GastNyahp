@@ -10,6 +10,16 @@ Este directorio es el punto único de entrada para la documentación humana del 
 | [Modelo de dominio](DOMAIN_MODEL.md) | Aggregates, eventos, invariantes, familias, MCP y borradores | Fuente principal del backend |
 | [Cuentas y login](ACCOUNTS_AND_LOGIN.md) | Email, contraseña, sesiones y recuperación | Reemplaza las decisiones antiguas de acceso |
 | [Despliegue en Railway](DEPLOY_RAILWAY.md) | PostgreSQL, backend, frontend, variables y diagnóstico | Guía operativa |
+## Documentación técnica
+
+| Documento | Contenido |
+| --- | --- |
+| [Arquitectura](ARCHITECTURE.md) | capas, dependencias, flujos, CQRS, multi-tenancy y composición |
+| [Event sourcing y Eventuous](EVENT_SOURCING.md) | eventos, state, comandos, streams, providers y consistencia |
+| [Comandos y servicios](COMMANDS_AND_SERVICES.md) | responsabilidades, pipeline, catálogo y extensión |
+| [Proyecciones y persistencia](PROJECTIONS_AND_PERSISTENCE.md) | EF Core, tablas, `$all`, idempotencia, migraciones y replay |
+| [API, MCP y frontend](INTERFACES.md) | REST, auth, OAuth, tools, skills, React, Zustand y Nginx |
+| [Desarrollo y pruebas](DEVELOPMENT.md) | lenguajes, dependencias, comandos, convenciones y estrategia de tests |
 
 ## Orden de precedencia
 

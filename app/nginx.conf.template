@@ -1,0 +1,66 @@
+# Plantilla procesada por la imagen oficial de nginx al arrancar (envsubst sobre /etc/nginx/templates/*.template).
+# Solo se sustituyen las variables que existen en el entorno; las de nginx ($host, $uri, $scheme…) quedan intactas.
+#
+# Los defaults viven en Dockerfile.frontend, así que en local (docker-compose) el resultado es idéntico al de
+# antes. En Railway se sobreescriben: PORT lo inyecta Railway, y BACKEND_HOST apunta al backend por la red privada
+# (<servicio>.railway.internal — usá el dominio EXACTO del servicio backend, o su variable RAILWAY_PRIVATE_DOMAIN).
+#
+#   PORT          puerto donde escucha nginx    local: 80    · Railway: inyectado
+#   BACKEND_HOST  host del backend a proxear     local: backend · Railway: <backend>.railway.internal
+#   BACKEND_PORT  puerto del backend            5050 en ambos
+#
+# nginx resuelve BACKEND_HOST UNA vez al arrancar (vía libc/resolv.conf). Si redeployás el backend, su IP privada
+# cambia y este proxy queda con la vieja → hay que redeployar también el frontend para que re-resuelva. Es el
+# trade-off por mantener el stack simple; si molesta, la salida limpia es servir el SPA desde el propio backend
+# (un solo servicio, sin DNS entre servicios).
+server {
+    listen ${PORT};
+    root /usr/share/nginx/html;
+    index index.html;
+
+    location /api/ {
+        proxy_pass         http://${BACKEND_HOST}:${BACKEND_PORT};
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_read_timeout 120s;
+        proxy_send_timeout 120s;
+        client_max_body_size 10m;
+    }
+
+    # OAuth para clientes MCP (ChatGPT): descubrimiento, registro dinámico, login y canje de código.
+    location /.well-known/ {
+        proxy_pass         http://${BACKEND_HOST}:${BACKEND_PORT};
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+    }
+
+    location /oauth/ {
+        proxy_pass         http://${BACKEND_HOST}:${BACKEND_PORT};
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+    }
+    # MCP streamable HTTP: puede responder SSE con la conexión abierta — sin buffering y timeout largo.
+    location /mcp {
+        proxy_pass         http://${BACKEND_HOST}:${BACKEND_PORT};
+        proxy_http_version 1.1;
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Real-IP         $remote_addr;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+        proxy_set_header   Connection "";
+        proxy_buffering    off;
+        proxy_cache        off;
+        proxy_read_timeout 3600s;
+        proxy_send_timeout 3600s;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;  # SPA fallback: las rutas de React Router resuelven a index.html
+    }
+}

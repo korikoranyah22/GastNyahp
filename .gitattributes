@@ -1,0 +1,4 @@
+# Scripts que corren DENTRO de contenedores Linux: forzar LF siempre. Con CRLF (lo que git podría meter en
+# Windows) el intérprete ve `#!/bin/sh\r` y el script falla o exporta valores con un \r pegado.
+*.sh    text eol=lf
+*.envsh text eol=lf

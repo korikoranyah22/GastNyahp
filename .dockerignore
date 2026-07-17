@@ -1,0 +1,13 @@
+# Node
+app/node_modules
+app/dist
+
+# .NET
+backend/**/bin
+backend/**/obj
+backend/**/*.db
+
+# Local/dev
+.env
+.git
+.claude

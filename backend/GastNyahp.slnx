@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/GastNyahp.Api/GastNyahp.Api.csproj" />
+    <Project Path="src/GastNyahp.Domain/GastNyahp.Domain.csproj" />
+    <Project Path="src/GastNyahp.Infrastructure/GastNyahp.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/GastNyahp.Domain.Tests/GastNyahp.Domain.Tests.csproj" />
+    <Project Path="tests/GastNyahp.E2E.Tests/GastNyahp.E2E.Tests.csproj" />
+    <Project Path="tests/GastNyahp.Integration.Tests/GastNyahp.Integration.Tests.csproj" />
+  </Folder>
+</Solution>

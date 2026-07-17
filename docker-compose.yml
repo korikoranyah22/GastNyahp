@@ -1,0 +1,63 @@
+# Stack de GastNyahp: Postgres (event store + read model) + backend .NET + frontend nginx.
+# Convenciones de docker-compose-service-network: red interna, host expuesto solo donde hace falta,
+# healthchecks con depends_on por condición, secretos vía .env (ver .env.example).
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB:       "${POSTGRES_DB:-gastnyahpdb}"
+      POSTGRES_USER:     "${POSTGRES_USER:-gastnyahp}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-change-me-in-prod}"
+    expose: ["5432"]
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    # Host 5055 (el contenedor sigue escuchando en 5050): evita chocar con AngelNaira,
+    # que publica su backend en 5050 y su MCP en 5060 en el mismo host.
+    ports: ["5055:5050"]
+    environment:
+      ASPNETCORE_ENVIRONMENT: "${ASPNETCORE_ENVIRONMENT:-Production}"
+      ASPNETCORE_URLS: http://0.0.0.0:5050
+      Database__Provider: Postgres
+      EventStore__Provider: Postgres
+      EventStore__Schema: eventuous
+      ConnectionStrings__Projections: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-gastnyahpdb};Username=${POSTGRES_USER:-gastnyahp};Password=${POSTGRES_PASSWORD:-change-me-in-prod}"
+      # La puerta de creación de familias: sin esta key el endpoint /api/admin/invites responde 503.
+      Admin__ApiKey: "${GASTNYAHP_ADMIN_KEY:-}"
+      BusinessDay__Enabled: "true"
+      BusinessDay__OpenTime: "06:00"
+      BusinessDay__TimeZone: "America/Argentina/Buenos_Aires"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:5050/health/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      start_period: 30s
+      retries: 5
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    # Host 3001 (el contenedor sigue en 80): evita chocar con el frontend de AngelNaira (3000).
+    ports: ["3001:80"]
+
+volumes:
+  postgres_data:

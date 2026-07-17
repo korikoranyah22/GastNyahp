@@ -1,0 +1,237 @@
+@import "tailwindcss";
+
+* { box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background-color: #0d0f14;
+  color: #e2e8f0;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #151820; }
+::-webkit-scrollbar-thumb { background: #3d4466; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #5a6285; }
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.slide-in { animation: slideInRight 0.25s ease-out; }
+.fade-in  { animation: fadeIn 0.15s ease-out; }
+
+@keyframes slideInUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+.slide-in-up { animation: slideInUp 0.22s ease-out; }
+
+/* ══════════════════════════════════════════════════════════════════
+   COZY THEME  —  Paleta kawaii pastel  🐷✨
+   ──────────────────────────────────────────────────────────────────
+   Paleta base (Coolors "Pal depto 5"):
+     #F7CDCD  rosa suave      → hover / borde estándar
+     #FFFFFF  blanco          → cards / superficies elevadas
+     #D4BEEE  lavanda         → ACENTO (botones, navlink activo)
+     #E5DFDC  beige cálido    → superficie neutra secundaria
+     #D6E8B5  sage verde      → semántico VERDE (ingresos)
+     #F7EBEC  rosa muy claro  → FONDO de página
+     #9ED6E7  celeste         → semántico CELESTE / info
+     #A5E3E0  menta           → semántico ESMERALDA
+   ══════════════════════════════════════════════════════════════════ */
+
+[data-theme="cozy"] body {
+  background-color: #F7EBEC;  /* rosa muy claro — fondo página */
+  color:            #2D1B2E;  /* casi negro con tono cálido    */
+}
+
+/* Scrollbar — rosa en track, lavanda en thumb */
+[data-theme="cozy"] ::-webkit-scrollbar-track { background: #F7CDCD; }
+[data-theme="cozy"] ::-webkit-scrollbar-thumb { background: #D4BEEE; border-radius: 3px; }
+[data-theme="cozy"] ::-webkit-scrollbar-thumb:hover { background: #B8A0D8; }
+
+/* ── Texto blanco → oscuro cálido (legible en fondo claro) ─────── */
+[data-theme="cozy"] .text-white { color: #2D1B2E !important; }
+
+/* ── Fondos ─────────────────────────────────────────────────────── */
+[data-theme="cozy"] .bg-\[\#0d0f14\] { background-color: #F7EBEC !important; } /* página        */
+[data-theme="cozy"] .bg-\[\#151820\] { background-color: #FFFFFF !important; } /* cards / white */
+[data-theme="cozy"] .bg-\[\#1a1f2e\] { background-color: #F7CDCD !important; } /* hover rosa    */
+[data-theme="cozy"] .bg-\[\#1c2030\] { background-color: #F7CDCD !important; } /* hover rosa    */
+[data-theme="cozy"] .bg-\[\#161b2a\] { background-color: #F7EBEC !important; } /* página        */
+[data-theme="cozy"] .bg-\[\#0d1117\] { background-color: #FFFFFF !important; } /* blanco puro   */
+[data-theme="cozy"] .bg-\[\#111827\] { background-color: #E5DFDC !important; } /* beige cálido  */
+[data-theme="cozy"] .bg-\[\#2e3350\] { background-color: #EDE8F5 !important; } /* lavanda claro — badges, toggles, inputs */
+/* Sub-filas expandidas en Dashboard (CardsDashboard) — casi negros sin override */
+[data-theme="cozy"] .bg-\[\#080a0f\] { background-color: #F0E4EA !important; } /* sub-fila: rosa ligeramente más oscuro */
+[data-theme="cozy"] .bg-\[\#0f1117\] { background-color: #EEE0E8 !important; } /* sub-fila hover */
+[data-theme="cozy"] .hover\:bg-\[\#0f1117\]:hover { background-color: #F7CDCD !important; }
+
+/* hover:bg-[#2e3350] — botones de acción (editar, eliminar, nav mes) */
+[data-theme="cozy"] .hover\:bg-\[\#2e3350\]:hover { background-color: #E4DCF0 !important; }
+
+/* group-hover — columna sticky en tablas */
+[data-theme="cozy"] .group:hover .group-hover\:bg-\[\#151820\] { background-color: #F7CDCD !important; }
+
+/* ── Fondos con opacidad (son clases distintas — sin override = GRIS) ── */
+/* En dark mode son overlays oscuros; en cozy = tints rosados suaves     */
+[data-theme="cozy"] .bg-\[\#0d0f14\]\/60 { background-color: rgba(247,205,205,0.45) !important; }
+[data-theme="cozy"] .bg-\[\#0d0f14\]\/50 { background-color: rgba(247,205,205,0.35) !important; }
+[data-theme="cozy"] .bg-\[\#0d0f14\]\/40 { background-color: rgba(247,205,205,0.25) !important; }
+[data-theme="cozy"] .bg-\[\#151820\]\/60 { background-color: rgba(247,205,205,0.45) !important; }
+[data-theme="cozy"] .bg-\[\#151820\]\/50 { background-color: rgba(247,205,205,0.35) !important; }
+[data-theme="cozy"] .bg-\[\#151820\]\/30 { background-color: rgba(247,205,205,0.20) !important; }
+[data-theme="cozy"] .bg-\[\#1c2030\]\/50 { background-color: rgba(247,205,205,0.35) !important; }
+[data-theme="cozy"] .bg-\[\#1c2030\]\/40 { background-color: rgba(247,205,205,0.25) !important; }
+
+/* Hover con opacidad */
+[data-theme="cozy"] .hover\:bg-\[\#151820\]\/60:hover { background-color: rgba(247,205,205,0.50) !important; }
+[data-theme="cozy"] .hover\:bg-\[\#151820\]\/50:hover { background-color: rgba(247,205,205,0.40) !important; }
+[data-theme="cozy"] .hover\:bg-\[\#151820\]\/30:hover { background-color: rgba(247,205,205,0.25) !important; }
+[data-theme="cozy"] .hover\:bg-\[\#1c2030\]\/50:hover { background-color: rgba(247,205,205,0.40) !important; }
+[data-theme="cozy"] .hover\:bg-\[\#1c2030\]\/40:hover { background-color: rgba(247,205,205,0.30) !important; }
+
+/* ── Bordes ─────────────────────────────────────────────────────── */
+[data-theme="cozy"] .border-\[\#1c2030\] { border-color: #F7CDCD !important; } /* rosa suave    */
+[data-theme="cozy"] .border-\[\#2e3350\] { border-color: #E8C8C8 !important; } /* rosa medio    */
+[data-theme="cozy"] .border-\[\#3d4466\] { border-color: #D4BEEE !important; } /* lavanda       */
+
+/* ── Texto ──────────────────────────────────────────────────────── */
+[data-theme="cozy"] .text-\[\#94a3b8\] { color: #5C3D52 !important; } /* secundario      */
+[data-theme="cozy"] .text-\[\#64748b\] { color: #8C6880 !important; } /* muted           */
+[data-theme="cozy"] .text-\[\#3d4466\] { color: #B094A8 !important; } /* muy muted / label */
+[data-theme="cozy"] .text-\[\#e2e8f0\] { color: #2D1B2E !important; } /* principal       */
+
+/* ── Hover: fondos ──────────────────────────────────────────────── */
+[data-theme="cozy"] .hover\:bg-\[\#1c2030\]:hover { background-color: #F7CDCD !important; }
+[data-theme="cozy"] .hover\:bg-\[\#1a1f2e\]:hover { background-color: #F7CDCD !important; }
+[data-theme="cozy"] .hover\:border-\[\#3d4466\]:hover { border-color: #D4BEEE !important; }
+[data-theme="cozy"] .hover\:text-white:hover { color: #2D1B2E !important; }
+
+/* ── NavLink activo — lavanda como acento ──────────────────────── */
+[data-theme="cozy"] .bg-blue-600\/20   { background-color: rgba(212,190,238,0.45) !important; }
+[data-theme="cozy"] .border-blue-600\/20 { border-color:   rgba(142,108,196,0.40) !important; }
+[data-theme="cozy"] .text-blue-400     { color: #6B4BA8 !important; } /* lavanda oscuro */
+[data-theme="cozy"] .text-blue-500     { color: #5B3A98 !important; }
+
+/* ── Botones — lavanda (#D4BEEE) con texto oscuro ──────────────── */
+[data-theme="cozy"] .bg-blue-600             { background-color: #D4BEEE !important; }
+[data-theme="cozy"] .hover\:bg-blue-700:hover { background-color: #C0A8E0 !important; }
+[data-theme="cozy"] .bg-blue-500             { background-color: #DEC8F4 !important; }
+
+/* ── Focus rings ────────────────────────────────────────────────── */
+[data-theme="cozy"] .focus\:ring-blue-500\/40:focus {
+  --tw-ring-color: rgba(142, 108, 196, 0.35) !important;
+}
+
+/* ── Placeholders ───────────────────────────────────────────────── */
+[data-theme="cozy"] .placeholder\:\[\#3d4466\]::placeholder { color: #B094A8 !important; }
+[data-theme="cozy"] .placeholder\:\[\#64748b\]::placeholder { color: #8C6880 !important; }
+
+/* ══════════════════════════════════════════════════════════════════
+   COLORES SEMÁNTICOS — directamente de la paleta
+   Los fondos de badges usan los colores de la paleta como tints.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Verde — sage (#D6E8B5) */
+[data-theme="cozy"] .text-green-400  { color: #3D6820 !important; }
+[data-theme="cozy"] .text-green-300  { color: #3D6820 !important; }
+
+/* Rojo — rosa oscuro (armónico con #F7CDCD) */
+[data-theme="cozy"] .text-red-400    { color: #8B2840 !important; }
+[data-theme="cozy"] .text-red-300    { color: #8B2840 !important; }
+
+/* Esmeralda — menta (#A5E3E0) */
+[data-theme="cozy"] .text-emerald-400     { color: #1A5E5A !important; }
+[data-theme="cozy"] .text-emerald-400\/70 { color: rgba(26,94,90,0.70) !important; }
+
+/* Ámbar — cálido, compatible con beige (#E5DFDC) */
+[data-theme="cozy"] .text-amber-400  { color: #7A5010 !important; }
+[data-theme="cozy"] .text-amber-300  { color: #7A5010 !important; }
+[data-theme="cozy"] .text-orange-300 { color: #7A3A10 !important; }
+
+/* Fondos de badges — tints directos de la paleta 🎨 */
+[data-theme="cozy"] .bg-green-500\/15   { background-color: rgba(214,232,181,0.60) !important; } /* sage   */
+[data-theme="cozy"] .bg-red-500\/15     { background-color: rgba(247,205,205,0.70) !important; } /* rosa   */
+[data-theme="cozy"] .bg-emerald-500\/15 { background-color: rgba(165,227,224,0.55) !important; } /* menta  */
+[data-theme="cozy"] .bg-amber-500\/15   { background-color: rgba(229,223,220,0.80) !important; } /* beige  */
+[data-theme="cozy"] .bg-green-600\/20   { background-color: rgba(214,232,181,0.65) !important; }
+
+/* Bordes de badges */
+[data-theme="cozy"] .border-green-500\/20 { border-color: rgba(61,104,32,0.22) !important; }
+[data-theme="cozy"] .border-red-500\/20   { border-color: rgba(139,40,64,0.22) !important; }
+[data-theme="cozy"] .border-green-500\/40 { border-color: rgba(61,104,32,0.38) !important; }
+
+/* ── Welcome screen ─────────────────────────────────────────────── */
+[data-theme="cozy"] .welcome-bg {
+  background: linear-gradient(160deg, #F7EBEC 0%, #F7CDCD 55%, #E8DAEE 100%) !important;
+}
+
+/* ══════════════════════════════════════════════════════════════════
+   COZY — colores adicionales para contraste en fondo claro
+   Cubre badges de categoría, columna mes actual, servicios, etc.
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Mes actual en tabla: text-blue-300 era casi invisible sobre blanco */
+[data-theme="cozy"] .text-blue-300   { color: #4A35A0 !important; }
+
+/* Badges de categoría */
+[data-theme="cozy"] .text-pink-400   { color: #9D2060 !important; }
+[data-theme="cozy"] .text-purple-400 { color: #6B3CA8 !important; }
+[data-theme="cozy"] .text-teal-400   { color: #1A6B65 !important; }
+[data-theme="cozy"] .text-teal-300   { color: #1A6B65 !important; }
+[data-theme="cozy"] .text-teal-500   { color: #136858 !important; }
+[data-theme="cozy"] .text-teal-600   { color: #0F5548 !important; }
+[data-theme="cozy"] .text-rose-400   { color: #8B2040 !important; }
+[data-theme="cozy"] .text-cyan-400   { color: #1A6875 !important; }
+[data-theme="cozy"] .text-indigo-400 { color: #4235A0 !important; }
+[data-theme="cozy"] .text-orange-400 { color: #7A3A10 !important; }
+[data-theme="cozy"] .text-green-500  { color: #2D5A15 !important; }
+
+/* Fondos de badges con opacidad — ajuste para legibilidad en fondo claro */
+[data-theme="cozy"] .bg-pink-500\/15   { background-color: rgba(236, 72,153,0.13) !important; }
+[data-theme="cozy"] .bg-purple-500\/15 { background-color: rgba(168, 85,247,0.12) !important; }
+[data-theme="cozy"] .bg-teal-500\/15   { background-color: rgba( 20,184,166,0.14) !important; }
+[data-theme="cozy"] .bg-rose-500\/15   { background-color: rgba(244, 63, 94,0.12) !important; }
+[data-theme="cozy"] .bg-cyan-500\/15   { background-color: rgba(  6,182,212,0.12) !important; }
+[data-theme="cozy"] .bg-indigo-500\/15 { background-color: rgba( 99,102,241,0.13) !important; }
+[data-theme="cozy"] .bg-orange-500\/15 { background-color: rgba(249,115, 22,0.13) !important; }
+[data-theme="cozy"] .bg-blue-500\/15   { background-color: rgba( 59,130,246,0.12) !important; }
+
+/* Columna mes actual — highlight lavanda en lugar de azul eléctrico */
+[data-theme="cozy"] .bg-blue-500\/5  { background-color: rgba(212,190,238,0.15) !important; }
+[data-theme="cozy"] .bg-blue-500\/10 { background-color: rgba(212,190,238,0.28) !important; }
+[data-theme="cozy"] .hover\:bg-blue-500\/10:hover { background-color: rgba(212,190,238,0.30) !important; }
+[data-theme="cozy"] .hover\:bg-blue-500\/20:hover { background-color: rgba(212,190,238,0.45) !important; }
+
+/* Filas pagadas / pendientes en tabla */
+[data-theme="cozy"] .bg-green-500\/10  { background-color: rgba(214,232,181,0.45) !important; }
+[data-theme="cozy"] .bg-red-500\/5     { background-color: rgba(247,205,205,0.45) !important; }
+[data-theme="cozy"] .bg-red-500\/10    { background-color: rgba(247,205,205,0.60) !important; }
+[data-theme="cozy"] .hover\:bg-green-500\/20:hover { background-color: rgba(214,232,181,0.55) !important; }
+[data-theme="cozy"] .hover\:bg-red-500\/10:hover   { background-color: rgba(247,205,205,0.65) !important; }
+
+/* Header "Este mes" y border-blue-600/15 */
+[data-theme="cozy"] .bg-blue-600\/15   { background-color: rgba(212,190,238,0.45) !important; }
+[data-theme="cozy"] .border-blue-600\/15 { border-color: rgba(142,108,196,0.35) !important; }
+
+/* ── text-always-white — texto sobre fondos coloreados (avatares de banco,
+      cara de tarjeta). No se sobreescribe en ningún tema.            ── */
+.text-always-white { color: #fff !important; }

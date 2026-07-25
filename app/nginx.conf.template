@@ -1,5 +1,5 @@
-# Plantilla procesada por la imagen oficial de nginx al arrancar (envsubst sobre /etc/nginx/templates/*.template).
-# Solo se sustituyen las variables que existen en el entorno; las de nginx ($host, $uri, $scheme…) quedan intactas.
+# app/Dockerfile procesa esta plantilla explícitamente con envsubst antes de arrancar nginx.
+# Sólo sustituye PORT, BACKEND_HOST y BACKEND_PORT; las variables propias de nginx quedan intactas.
 #
 # Los defaults viven en app/Dockerfile, así que en local (docker-compose) el resultado es idéntico al de
 # antes. En Railway se sobreescriben: PORT lo inyecta Railway, y BACKEND_HOST apunta al backend por la red privada

@@ -1,202 +1,339 @@
-# Deploy en Railway
+# Desplegar GastNyahp en Railway
 
-## Configuración versionada
+Esta es la única guía vigente. Seguí los pasos en orden y no mezcles configuraciones anteriores.
 
-Cada servicio tiene una única configuración autocontenida. No hay Dockerfiles ni archivos Railway alternativos
-en la raíz, para evitar combinar un Dockerfile con el contexto equivocado:
+## Resultado esperado
 
-- `app/Dockerfile`, `app/railway.json` y `app/railway.env.example`: frontend nginx y proxy.
-- `backend/Dockerfile`, `backend/railway.json` y `backend/railway.env.example`: API .NET.
+El proyecto de Railway tendrá exactamente tres servicios:
 
-Configuración del frontend:
+| Nombre exacto | Tipo | Directorio raíz | Puerto | Público |
+|---|---|---|---:|---|
+| `Postgres` | PostgreSQL administrado | — | Railway | No |
+| `gastnyahp-backend` | Repo GitHub | `/backend` | `5050` | No |
+| `gastnyahp-frontend` | Repo GitHub | `/app` | `80` | Sí |
+
+Los nombres importan porque las variables de referencia los usan literalmente.
+
+## Antes de empezar
+
+1. Confirmá que todos los cambios estén en la rama `main` de GitHub.
+2. En Railway, cada servicio debe apuntar a `main`.
+3. Eliminá de ambos servicios cualquier configuración histórica:
+   - variable `RAILWAY_DOCKERFILE_PATH`;
+   - Build Command personalizado;
+   - Start Command personalizado;
+   - Root Directory distinto del indicado en esta guía;
+   - Config File distinto del indicado en esta guía.
+4. No publiques el backend ni PostgreSQL. El único dominio público pertenece al frontend.
+
+Cada servicio tiene una sola configuración:
+
+```text
+app/Dockerfile
+app/railway.json
+app/railway.env.example
+
+backend/Dockerfile
+backend/railway.json
+backend/railway.env.example
+```
+
+No existen Dockerfiles alternativos en la raíz del repositorio.
+
+## Paso 1: crear PostgreSQL
+
+En el canvas del proyecto:
+
+1. Seleccioná **New → Database → Add PostgreSQL**.
+2. Renombrá el servicio exactamente a `Postgres`.
+3. No generes un dominio público.
+4. Verificá que su pestaña **Variables** contenga `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER` y `PGPASSWORD`.
+
+No copies manualmente las credenciales: el backend las consumirá mediante referencias de Railway.
+
+## Paso 2: crear el backend
+
+Creá un servicio desde el repositorio de GitHub.
+
+### Settings
+
+Configurá exactamente:
+
+```text
+Service name:   gastnyahp-backend
+Branch:         main
+Root Directory: /backend
+Config File:    /backend/railway.json
+```
+
+No generes un dominio público. No configures Build Command ni Start Command.
+
+Railway debe detectar `backend/Dockerfile`. En el build correcto aparecen líneas como:
+
+```text
+load build definition from Dockerfile
+COPY src/GastNyahp.Api/GastNyahp.Api.csproj
+```
+
+Si aparece `Dockerfile.backend` o `COPY backend/src/...`, Railway está usando una configuración antigua.
+
+### Variables obligatorias
+
+Abrí **Variables → RAW Editor** y cargá estas variables:
+
+```dotenv
+ASPNETCORE_ENVIRONMENT=Production
+PORT=5050
+ASPNETCORE_HTTP_PORTS=5050
+ASPNETCORE_URLS=http://[::]:5050
+Database__Provider=Postgres
+EventStore__Provider=Postgres
+EventStore__Schema=eventuous
+ConnectionStrings__Projections=Host=${{Postgres.PGHOST}};Port=${{Postgres.PGPORT}};Database=${{Postgres.PGDATABASE}};Username=${{Postgres.PGUSER}};Password=${{Postgres.PGPASSWORD}};SSL Mode=Disable
+Admin__ApiKey=REEMPLAZAR_POR_UN_SECRETO_ALEATORIO_DE_64_CARACTERES
+Admin__AllowKeyAsCode=true
+BusinessDay__Enabled=true
+BusinessDay__OpenTime=06:00
+BusinessDay__TimeZone=America/Argentina/Buenos_Aires
+```
+
+Las tres variables de puerto son obligatorias en Railway, aunque el Dockerfile también tenga valores por defecto:
+
+```dotenv
+PORT=5050
+ASPNETCORE_HTTP_PORTS=5050
+ASPNETCORE_URLS=http://[::]:5050
+```
+
+Sin las tres, la API puede iniciar en `5050` mientras el healthcheck intenta consultar `8080`, dejando el deploy
+atascado aunque los logs digan `Application started`.
+
+### Clave administrativa
+
+Antes de desplegar, reemplazá el placeholder de `Admin__ApiKey` por una cadena aleatoria de al menos 64 caracteres.
+No uses una frase memorable, no reutilices una contraseña y no guardes el valor en Git.
+
+Después de crear la variable:
+
+1. Abrí su menú de tres puntos.
+2. Elegí **Seal**.
+3. Guardá una copia en tu gestor de contraseñas.
+
+Con `Admin__AllowKeyAsCode=true`, esa clave se puede escribir directamente en el campo “Código del administrador”
+para crear una familia. Por eso debe tratarse como una contraseña.
+
+### Desplegar y verificar el backend
+
+Desplegá el backend antes que el frontend. El deploy correcto muestra:
+
+```text
+Database schema initialized
+Now listening on: http://[::]:5050
+Application started
+```
+
+El healthcheck `/health/live` debe quedar verde. No hace falta un dominio público para comprobarlo: Railway ejecuta
+el healthcheck dentro de su red.
+
+## Paso 3: crear el frontend
+
+Creá un segundo servicio usando el mismo repositorio.
+
+### Settings
+
+Configurá exactamente:
+
+```text
+Service name:   gastnyahp-frontend
+Branch:         main
+Root Directory: /app
+Config File:    /app/railway.json
+```
+
+No configures Build Command ni Start Command.
+
+Railway debe detectar `app/Dockerfile`. El arranque correcto incluye:
+
+```text
+nginx: the configuration file /etc/nginx/nginx.conf syntax is ok
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+```
+
+Si los logs muestran intentos de abrir `/usr/share/nginx/html/api/...`, Railway está usando un servidor estático
+sin nuestra configuración nginx.
+
+### Variables obligatorias
+
+En **Variables → RAW Editor** cargá:
+
+```dotenv
+PORT=80
+BACKEND_HOST=${{gastnyahp-backend.RAILWAY_PRIVATE_DOMAIN}}
+BACKEND_PORT=5050
+```
+
+`BACKEND_HOST` debe ser una referencia al dominio privado del backend. No escribas el dominio público del frontend
+ni inventes el hostname.
+
+### Dominio público
+
+En **Settings → Networking → Public Networking**:
+
+1. Generá un dominio.
+2. Configurá **Target Port = `80`**.
+3. No agregues TCP Proxy.
+
+Cuando Railway genere el dominio, la referencia usada por `OAuth__Issuer` se resolverá automáticamente. Si el
+backend ya estaba desplegado antes de crear el dominio:
+
+1. Volvé a **Variables** del backend.
+2. Agregá:
+
+```dotenv
+OAuth__Issuer=https://${{gastnyahp-frontend.RAILWAY_PUBLIC_DOMAIN}}
+```
+
+3. Redeployá primero el backend.
+4. Cuando el backend quede healthy, desplegá o redeployá el frontend.
+
+## Paso 4: pruebas finales
+
+Usá el dominio público del frontend.
+
+### 1. Portada
+
+```text
+https://TU-DOMINIO/
+```
+
+Debe cargar la aplicación. Esto sólo prueba que nginx sirve archivos estáticos.
+
+### 2. Healthcheck completo
+
+```text
+https://TU-DOMINIO/health/live
+```
+
+Debe responder:
+
+```json
+{"status":"ok"}
+```
+
+Esta prueba confirma frontend nginx → red privada Railway → backend.
+
+### 3. API
+
+Abrí:
+
+```text
+https://TU-DOMINIO/api/families
+```
+
+Puede responder `401`, `400` o datos según la autenticación, pero nunca debe devolver una página HTML `404 Not
+Found` de nginx.
+
+### 4. Crear la primera familia
+
+En “Crear familia”, usá como código del administrador el valor real de `Admin__ApiKey`.
+
+## Orden correcto para futuros cambios
+
+Cuando cambie solamente el backend:
+
+1. Esperá que el backend quede healthy.
+2. Redeployá el frontend para que nginx vuelva a resolver la IP privada del backend.
+
+Cuando cambie solamente el frontend, desplegá el frontend normalmente.
+
+## Diagnóstico rápido
+
+### El backend compila pero el healthcheck dice “service unavailable”
+
+En Deploy Logs, confirmá:
+
+```text
+Now listening on: http://[::]:5050
+```
+
+Luego verificá que existan exactamente:
+
+```dotenv
+PORT=5050
+ASPNETCORE_HTTP_PORTS=5050
+ASPNETCORE_URLS=http://[::]:5050
+```
+
+No confíes solamente en los defaults del Dockerfile.
+
+### El frontend carga, pero `/api` o `/health/live` devuelve nginx 404
+
+La portada puede funcionar aunque el proxy no exista. Revisá:
 
 ```text
 Root Directory: /app
-Config file: /app/railway.json
+Config File: /app/railway.json
 ```
 
-Configuración del backend:
+Eliminá `RAILWAY_DOCKERFILE_PATH`, Build Command y Start Command. Desplegá el último commit, no reutilices un
+deployment antiguo.
+
+### El build intenta copiar `app/nginx.conf.template`
+
+Está mezclando el Dockerfile antiguo con Root Directory `/app`. El Dockerfile correcto, dentro de `/app`, copia:
+
+```dockerfile
+COPY nginx.conf.template /etc/nginx/templates/nginx.conf.template
+```
+
+### El build intenta copiar `backend/src/...`
+
+Está mezclando el Dockerfile antiguo con Root Directory `/backend`. El Dockerfile correcto copia:
+
+```dockerfile
+COPY src/ ./src/
+```
+
+### nginx devuelve `host not found in upstream`
+
+Confirmá:
+
+```dotenv
+BACKEND_HOST=${{gastnyahp-backend.RAILWAY_PRIVATE_DOMAIN}}
+BACKEND_PORT=5050
+```
+
+El nombre `gastnyahp-backend` debe coincidir exactamente con el servicio.
+
+### El backend no conecta a PostgreSQL
+
+1. Confirmá que el servicio se llame exactamente `Postgres`.
+2. Revisá que `ConnectionStrings__Projections` use las cinco referencias `Postgres.PG...`.
+3. No uses `DATABASE_URL`: Npgsql espera la cadena `Host=...;Port=...`.
+4. Si Railway exige TLS, reemplazá `SSL Mode=Disable` por:
 
 ```text
-Root Directory: /backend
-Config file: /backend/railway.json
+SSL Mode=Require;Trust Server Certificate=true
 ```
 
-En ambos directorios el archivo se llama exactamente `Dockerfile`, por lo que Railway lo detecta automáticamente.
-El frontend escucha públicamente en `80` y el backend en el puerto privado `5050`.
+### La clave administrativa responde 503
 
-Después pegá el archivo `.env.example` correspondiente en **Variables → RAW Editor**. Railway no admite variables
-de servicio dentro de Config as Code: `railway.json` sólo configura build y deploy. Los archivos importables evitan
-tener que descubrir o transcribir variables una por una.
+La variable debe llamarse exactamente:
 
-Los nombres esperados son `Postgres`, `gastnyahp-backend` y `gastnyahp-frontend`, porque las referencias usan esos
-nombres. Si un servicio tiene otro nombre, renombralo o actualizá el namespace en los dos archivos de variables.
-
-`Admin__ApiKey=${{secret(64)}}` usa la función de secretos de las plantillas de Railway. Si el RAW Editor no evalúa
-funciones de plantilla en un proyecto ya creado, reemplazá únicamente ese valor por un secreto aleatorio de 64
-caracteres y sellalo desde el menú de la variable. No lo guardes en Git.
-
-Railway **no corre `docker-compose.yml`**: cada servicio del compose se vuelve un servicio Railway aparte. Esta
-guía arma esos tres servicios a mano una sola vez. El compose se mantiene intacto y sigue siendo la forma de
-correr todo en local — no se toca nada de lo que ya usás.
-
-## Qué cambió en el repo para que esto funcione
-
-- [`app/nginx.conf.template`](../app/nginx.conf.template) — la config de nginx quedó parametrizada por variables de
-  entorno (`PORT`, `BACKEND_HOST`, `BACKEND_PORT`). Con los defaults del Dockerfile el resultado es **idéntico**
-  al de antes en local; Railway sobreescribe esas variables.
-- [`app/Dockerfile`](../app/Dockerfile) — usa el mecanismo de plantillas de la imagen de nginx (envsubst
-  al arrancar) y trae los defaults `PORT=80`, `BACKEND_HOST=backend`, `BACKEND_PORT=5050`.
-
-El backend toma el puerto y la connection string desde configuración/variables.
-
----
-
-## Paso 0 — Repositorio git
-
-Railway construye desde un repo de GitHub, y este proyecto todavía no es un repo. Lo más simple es que el repo
-sea **la carpeta `gastnyahp/`** (es autocontenida: acá están el compose y los dos Dockerfiles).
-
-```bash
-cd gastnyahp
-git init
-git add .
-git commit -m "GastNyahp: stack docker-compose + deploy Railway"
-# crear el repo en GitHub y:
-git remote add origin https://github.com/korikoranyah22/gastapp.git
-git push -u origin main
+```text
+Admin__ApiKey
 ```
 
-El `.env` ya está en `.gitignore`, así que los secretos **no** se suben. Los vas a recrear como variables de
-Railway (paso 2 y 3).
+No `GASTNYAHP_ADMIN_KEY`, no `Admin_ApiKey` y no `Admin:ApiKey`.
 
-> **Si preferís un repo en la carpeta de arriba** (`gastnyahp-docker-backend`, junto a `angelnairav2_public`): sirve
-> igual, pero en cada servicio de Railway tenés que setear **Root Directory = `gastnyahp`**. El resto es idéntico.
+## Verificación local
 
----
+Desde la raíz del repositorio:
 
-## Paso 1 — Postgres administrado
-
-En el proyecto de Railway: **New → Database → Add PostgreSQL**. Reemplaza al servicio `postgres` del compose; no
-uses una imagen de Postgres a mano. Anotá el nombre del servicio (por defecto **`Postgres`**): lo usás en la
-connection string de abajo.
-
----
-
-## Paso 2 — Servicio backend
-
-**New → GitHub Repo →** elegí el repo. Después, en el servicio:
-
-**Settings**
-- **Root Directory**: `/backend`.
-- **Config file**: `/backend/railway.json`.
-- **Networking**: *no* generes dominio público. El backend queda interno; sale al mundo sólo por el frontend.
-
-**Variables** (equivalen al bloque `environment:` del backend en el compose, con dos ajustes marcados 👇):
-
-```
-ASPNETCORE_ENVIRONMENT   = Production
-ASPNETCORE_URLS          = http://+:5050          # 👈 escucha en todas las interfaces (IPv4+IPv6 de la red privada)
-Database__Provider       = Postgres
-EventStore__Provider     = Postgres
-EventStore__Schema       = eventuous
-Admin__ApiKey            = <tu-clave-de-admin>     # el GASTNYAHP_ADMIN_KEY del .env (OJO: acá se llama Admin__ApiKey)
-Admin__AllowKeyAsCode    = true                   # opcional — ver "Crear la primera familia"
-BusinessDay__Enabled     = true
-BusinessDay__OpenTime    = 06:00
-BusinessDay__TimeZone    = America/Argentina/Buenos_Aires
-OAuth__Issuer            = https://TU-DOMINIO-PUBLICO-DEL-FRONTEND
-ConnectionStrings__Projections = Host=${{Postgres.PGHOST}};Port=${{Postgres.PGPORT}};Database=${{Postgres.PGDATABASE}};Username=${{Postgres.PGUSER}};Password=${{Postgres.PGPASSWORD}};SSL Mode=Disable
-```
-
-Notas:
-- `${{Postgres.PGHOST}}` es una **variable de referencia** de Railway: apunta al servicio Postgres del Paso 1. Si
-  tu servicio Postgres se llama distinto, cambiá `Postgres` por ese nombre. Confirmá los nombres exactos de las
-  variables en la pestaña *Variables* del servicio Postgres.
-- Npgsql **no parsea** el `DATABASE_URL` en formato URL que da Railway; por eso se arma la string con `Host=…`.
-- La conexión va por la red privada, así que `SSL Mode=Disable` está bien. Si el primer deploy falla por SSL,
-  probá `SSL Mode=Require;Trust Server Certificate=true`.
-- OAuth__Issuer debe ser el origen público HTTPS del frontend, sin barra final. ChatGPT usa ese origen para descubrir y completar OAuth; nginx reenvía /.well-known, /oauth y /mcp al backend privado.
-- Las migraciones se aplican **solas** al arrancar y reintentan si Postgres todavía no está listo, así que el
-  orden de arranque no importa (no hace falta `depends_on`).
-
----
-
-## Paso 3 — Servicio frontend
-
-**New → GitHub Repo →** el **mismo** repo, segundo servicio.
-
-**Settings**
-- **Root Directory**: `/app`.
-- **Config file**: `/app/railway.json`.
-- **Networking → Generate Domain**: acá **sí** — este es el único servicio público. Railway le inyecta `PORT` y
-  nginx escucha ahí (no seteés `PORT` a mano).
-
-**Variables**:
-
-```
-BACKEND_HOST            = ${{gastnyahp-backend.RAILWAY_PRIVATE_DOMAIN}}   # ver nota
-BACKEND_PORT            = 5050
-```
-
-**`BACKEND_HOST` tiene que ser el dominio privado EXACTO del servicio backend.** El dominio interno es
-`<nombre-del-servicio>.railway.internal` — si tu backend se llama `gastnyahp-backend`, es
-`gastnyahp-backend.railway.internal`, **no** `gastnyahp.railway.internal`. Lo más seguro es no adivinar y usar la
-variable de referencia `${{<nombre-del-backend>.RAILWAY_PRIVATE_DOMAIN}}` (reemplazá por el nombre real del
-servicio), que Railway completa con el valor correcto. Como el frontend proxea `/api` y `/mcp` al backend por la
-red interna, la app sigue hablándole a su propio origen (`/api`) — cero CORS, igual que en local.
-
----
-
-## Paso 4 — Primer arranque
-
-1. Deployá el backend primero (o los dos; el reintento de conexión cubre el desfasaje).
-2. Cuando ambos estén verdes, abrí el dominio del frontend.
-3. Para crear la primera familia hace falta un "código de administrador". Dos caminos:
-   - **Atajo (recomendado para self-hosted):** poné `Admin__AllowKeyAsCode=true` en el backend y escribí el valor
-     de `Admin__ApiKey` **directo** en el campo "código del administrador" del form. Es reusable. Cuidado: con el
-     flag activo, esa llave pasa a ser también una contraseña de "crear familia" — mantenela secreta.
-   - **Estricto (código de un solo uso):** dejá el flag apagado y generá un código con
-     `POST /api/admin/invites` + header `X-Admin-Key: <tu-Admin__ApiKey>`; escribí **ese** código en el form.
-
-> ⚠️ **`Admin__ApiKey`, con doble guión bajo.** En local el `.env` usa `GASTNYAHP_ADMIN_KEY` y el docker-compose lo
-> traduce; en Railway **no hay traducción**, el backend lee literalmente `Admin__ApiKey`. Si lo ponés como
-> `GASTNYAHP_ADMIN_KEY`, el endpoint de admin responde `503` y el atajo no funciona.
-
----
-
-## Verificación local (que nada se rompió)
-
-Con Docker corriendo, desde `gastnyahp/`:
-
-```bash
-docker compose build frontend   # el template de nginx se resuelve con los defaults
+```powershell
+docker compose build
 docker compose up -d
+docker compose ps
 ```
 
-Debe quedar idéntico a siempre: frontend en http://localhost:3001, backend interno en 5050.
-
----
-
-## Troubleshooting (gotchas ya pisados)
-
-**Railpack en vez de Docker / "could not determine how to build".** Revisá que Railway esté construyendo la rama
-correcta y que cada servicio tenga su Root Directory exacto (`/app` o `/backend`). Ambos directorios contienen un
-archivo llamado `Dockerfile`, por lo que Railway debe detectarlo sin variables adicionales.
-
-**`... could not be resolved` o `upstream timed out` en los logs del frontend.** nginx no llega al backend. En
-orden de probabilidad:
-- *`BACKEND_HOST` mal.* nginx loguea qué host intentó resolver. Tiene que ser el dominio privado EXACTO del
-  backend (`gastnyahp-backend.railway.internal`, no `gastnyahp.railway.internal`). Ver la nota del Paso 3.
-- *El backend escucha en otro puerto.* La imagen `aspnet:10.0` por defecto usa 8080. Confirmá que el backend
-  tenga `ASPNETCORE_URLS=http://+:5050` (en sus logs, Kestrel imprime `Now listening on: http://[::]:5050`).
-- *nginx cacheó una IP vieja del backend.* nginx resuelve `BACKEND_HOST` **una vez al arrancar**; si redeployás
-  el backend, su IP privada cambia y el proxy queda con la vieja → **redeployá el frontend** para que re-resuelva.
-  Por eso conviene deployar el backend primero y el frontend después.
-
-> Si ese trade-off de redeploy molesta, la salida limpia es servir el SPA desde el propio backend (un solo
-> servicio, sin DNS entre servicios). No está hecho acá, pero elimina toda esta clase de problemas.
-
-**El backend arranca pero no conecta a Postgres.** Revisá `ConnectionStrings__Projections`: Npgsql no parsea el
-`DATABASE_URL` en formato URL — tiene que ser la string `Host=…;Port=…;…`. Las migraciones se aplican solas y
-reintentan, así que un desfasaje de arranque se recupera; un fallo persistente es la connection string.
+El frontend queda en `http://localhost:3001` y el backend en `http://localhost:5055`.

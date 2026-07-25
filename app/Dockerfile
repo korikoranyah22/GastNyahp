@@ -11,5 +11,6 @@ ENV PORT=80 \
     BACKEND_PORT=5050
 RUN rm /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
-COPY nginx.conf.template /etc/nginx/templates/nginx.conf.template
+COPY nginx.conf.template /etc/nginx/nginx.conf.template
 EXPOSE 80
+CMD ["/bin/sh", "-c", "envsubst '$PORT $BACKEND_HOST $BACKEND_PORT' < /etc/nginx/nginx.conf.template > /etc/nginx/conf.d/default.conf && nginx -t && exec nginx -g 'daemon off;'"]

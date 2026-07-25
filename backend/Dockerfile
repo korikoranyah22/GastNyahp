@@ -11,7 +11,9 @@ RUN dotnet publish src/GastNyahp.Api/GastNyahp.Api.csproj -c Release -o /app/pub
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
-ENV ASPNETCORE_ENVIRONMENT=Production \
+ENV PORT=5050 \
+    ASPNETCORE_HTTP_PORTS=5050 \
+    ASPNETCORE_ENVIRONMENT=Production \
     ASPNETCORE_URLS=http://[::]:5050
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \

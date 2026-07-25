@@ -18,6 +18,15 @@ server {
     root /usr/share/nginx/html;
     index index.html;
 
+    # Railway usa esta ruta para verificar tanto nginx como la conectividad privada con el backend.
+    # Tiene que estar antes del fallback del SPA: devolver index.html produciría un falso positivo.
+    location = /health/live {
+        proxy_pass         http://${BACKEND_HOST}:${BACKEND_PORT};
+        proxy_set_header   Host              $host;
+        proxy_set_header   X-Forwarded-For   $proxy_add_x_forwarded_for;
+        proxy_set_header   X-Forwarded-Proto $scheme;
+    }
+
     location /api/ {
         proxy_pass         http://${BACKEND_HOST}:${BACKEND_PORT};
         proxy_set_header   Host              $host;

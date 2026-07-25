@@ -2,42 +2,28 @@
 
 ## Configuración versionada
 
-El repositorio incluye configuración separada para ambos servicios:
+Cada servicio tiene una única configuración autocontenida. No hay Dockerfiles ni archivos Railway alternativos
+en la raíz, para evitar combinar un Dockerfile con el contexto equivocado:
 
-- `railway.backend.json`: Dockerfile, rutas observadas, healthcheck y política de reinicio del backend.
-- `railway.frontend.json`: la configuración equivalente para el frontend.
-- `railway.backend.env.example`: todas las variables y referencias requeridas por el backend.
-- `railway.frontend.env.example`: variables de red privada del frontend.
-- `app/Dockerfile` y `app/railway.json`: alternativa autodetectable cuando el servicio frontend usa
-  **Root Directory = `/app`**. Este es el modo recomendado porque evita que Railway caiga silenciosamente en
-  Railpack y sirva `/api` como si fuera un archivo estático.
-- `backend/Dockerfile` y `backend/railway.json`: configuración autocontenida equivalente para desplegar la API
-  con **Root Directory = `/backend`**, sin depender de archivos ubicados en la raíz del repositorio.
+- `app/Dockerfile`, `app/railway.json` y `app/railway.env.example`: frontend nginx y proxy.
+- `backend/Dockerfile`, `backend/railway.json` y `backend/railway.env.example`: API .NET.
 
-Al crear cada servicio desde el mismo repositorio, elegí su archivo en **Settings → Config as Code → Config file**:
-
-```text
-/railway.backend.json
-/railway.frontend.json
-```
-
-Para el frontend también podés usar la configuración autocontenida recomendada:
+Configuración del frontend:
 
 ```text
 Root Directory: /app
 Config file: /app/railway.json
 ```
 
-Dentro de `/app` el Dockerfile se llama exactamente `Dockerfile`, por lo que Railway lo detecta automáticamente.
-
-Para el backend se recomienda la misma disposición:
+Configuración del backend:
 
 ```text
 Root Directory: /backend
 Config file: /backend/railway.json
 ```
 
-También contiene un `Dockerfile` autodetectable y escucha en el puerto privado `5050`.
+En ambos directorios el archivo se llama exactamente `Dockerfile`, por lo que Railway lo detecta automáticamente.
+El frontend escucha públicamente en `80` y el backend en el puerto privado `5050`.
 
 Después pegá el archivo `.env.example` correspondiente en **Variables → RAW Editor**. Railway no admite variables
 de servicio dentro de Config as Code: `railway.json` sólo configura build y deploy. Los archivos importables evitan
@@ -59,10 +45,10 @@ correr todo en local — no se toca nada de lo que ya usás.
 - [`app/nginx.conf.template`](../app/nginx.conf.template) — la config de nginx quedó parametrizada por variables de
   entorno (`PORT`, `BACKEND_HOST`, `BACKEND_PORT`). Con los defaults del Dockerfile el resultado es **idéntico**
   al de antes en local; Railway sobreescribe esas variables.
-- [`Dockerfile.frontend`](../Dockerfile.frontend) — usa el mecanismo de plantillas de la imagen de nginx (envsubst
+- [`app/Dockerfile`](../app/Dockerfile) — usa el mecanismo de plantillas de la imagen de nginx (envsubst
   al arrancar) y trae los defaults `PORT=80`, `BACKEND_HOST=backend`, `BACKEND_PORT=5050`.
 
-El backend **no necesitó cambios**: el puerto y la connection string ya salen de configuración/variables.
+El backend toma el puerto y la connection string desde configuración/variables.
 
 ---
 
@@ -102,7 +88,8 @@ connection string de abajo.
 **New → GitHub Repo →** elegí el repo. Después, en el servicio:
 
 **Settings**
-- **Root Directory**: `/` (o `gastnyahp` si el repo es la carpeta de arriba — ver Paso 0).
+- **Root Directory**: `/backend`.
+- **Config file**: `/backend/railway.json`.
 - **Networking**: *no* generes dominio público. El backend queda interno; sale al mundo sólo por el frontend.
 
 **Variables** (equivalen al bloque `environment:` del backend en el compose, con dos ajustes marcados 👇):
@@ -119,7 +106,6 @@ BusinessDay__Enabled     = true
 BusinessDay__OpenTime    = 06:00
 BusinessDay__TimeZone    = America/Argentina/Buenos_Aires
 OAuth__Issuer            = https://TU-DOMINIO-PUBLICO-DEL-FRONTEND
-RAILWAY_DOCKERFILE_PATH  = Dockerfile.backend      # 👈 Railway sólo detecta un archivo llamado "Dockerfile" por defecto
 ConnectionStrings__Projections = Host=${{Postgres.PGHOST}};Port=${{Postgres.PGPORT}};Database=${{Postgres.PGDATABASE}};Username=${{Postgres.PGUSER}};Password=${{Postgres.PGPASSWORD}};SSL Mode=Disable
 ```
 
@@ -141,14 +127,14 @@ Notas:
 **New → GitHub Repo →** el **mismo** repo, segundo servicio.
 
 **Settings**
-- **Root Directory**: igual que el backend (`/` o `gastnyahp`).
+- **Root Directory**: `/app`.
+- **Config file**: `/app/railway.json`.
 - **Networking → Generate Domain**: acá **sí** — este es el único servicio público. Railway le inyecta `PORT` y
   nginx escucha ahí (no seteés `PORT` a mano).
 
 **Variables**:
 
 ```
-RAILWAY_DOCKERFILE_PATH = Dockerfile.frontend
 BACKEND_HOST            = ${{gastnyahp-backend.RAILWAY_PRIVATE_DOMAIN}}   # ver nota
 BACKEND_PORT            = 5050
 ```
@@ -194,10 +180,9 @@ Debe quedar idéntico a siempre: frontend en http://localhost:3001, backend inte
 
 ## Troubleshooting (gotchas ya pisados)
 
-**Railpack en vez de Docker / "could not determine how to build".** Dos causas, casi siempre juntas: (a) Railway
-está construyendo una rama que no tiene los Dockerfiles —revisá que el servicio apunte a la rama correcta en
-*Settings → Source → Branch*, o hacé que esa sea la default del repo—; y (b) falta `RAILWAY_DOCKERFILE_PATH`
-(los Dockerfiles no se llaman `Dockerfile` a secas, así que sin la variable Railway cae a Railpack).
+**Railpack en vez de Docker / "could not determine how to build".** Revisá que Railway esté construyendo la rama
+correcta y que cada servicio tenga su Root Directory exacto (`/app` o `/backend`). Ambos directorios contienen un
+archivo llamado `Dockerfile`, por lo que Railway debe detectarlo sin variables adicionales.
 
 **`... could not be resolved` o `upstream timed out` en los logs del frontend.** nginx no llega al backend. En
 orden de probabilidad:

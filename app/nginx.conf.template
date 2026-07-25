@@ -1,7 +1,7 @@
 # Plantilla procesada por la imagen oficial de nginx al arrancar (envsubst sobre /etc/nginx/templates/*.template).
 # Solo se sustituyen las variables que existen en el entorno; las de nginx ($host, $uri, $scheme…) quedan intactas.
 #
-# Los defaults viven en Dockerfile.frontend, así que en local (docker-compose) el resultado es idéntico al de
+# Los defaults viven en app/Dockerfile, así que en local (docker-compose) el resultado es idéntico al de
 # antes. En Railway se sobreescriben: PORT lo inyecta Railway, y BACKEND_HOST apunta al backend por la red privada
 # (<servicio>.railway.internal — usá el dominio EXACTO del servicio backend, o su variable RAILWAY_PRIVATE_DOMAIN).
 #

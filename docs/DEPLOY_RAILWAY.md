@@ -8,6 +8,11 @@ El repositorio incluye configuración separada para ambos servicios:
 - `railway.frontend.json`: la configuración equivalente para el frontend.
 - `railway.backend.env.example`: todas las variables y referencias requeridas por el backend.
 - `railway.frontend.env.example`: variables de red privada del frontend.
+- `app/Dockerfile` y `app/railway.json`: alternativa autodetectable cuando el servicio frontend usa
+  **Root Directory = `/app`**. Este es el modo recomendado porque evita que Railway caiga silenciosamente en
+  Railpack y sirva `/api` como si fuera un archivo estático.
+- `backend/Dockerfile` y `backend/railway.json`: configuración autocontenida equivalente para desplegar la API
+  con **Root Directory = `/backend`**, sin depender de archivos ubicados en la raíz del repositorio.
 
 Al crear cada servicio desde el mismo repositorio, elegí su archivo en **Settings → Config as Code → Config file**:
 
@@ -15,6 +20,24 @@ Al crear cada servicio desde el mismo repositorio, elegí su archivo en **Settin
 /railway.backend.json
 /railway.frontend.json
 ```
+
+Para el frontend también podés usar la configuración autocontenida recomendada:
+
+```text
+Root Directory: /app
+Config file: /app/railway.json
+```
+
+Dentro de `/app` el Dockerfile se llama exactamente `Dockerfile`, por lo que Railway lo detecta automáticamente.
+
+Para el backend se recomienda la misma disposición:
+
+```text
+Root Directory: /backend
+Config file: /backend/railway.json
+```
+
+También contiene un `Dockerfile` autodetectable y escucha en el puerto privado `5050`.
 
 Después pegá el archivo `.env.example` correspondiente en **Variables → RAW Editor**. Railway no admite variables
 de servicio dentro de Config as Code: `railway.json` sólo configura build y deploy. Los archivos importables evitan

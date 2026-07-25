@@ -1,5 +1,32 @@
 # Deploy en Railway
 
+## Configuración versionada
+
+El repositorio incluye configuración separada para ambos servicios:
+
+- `railway.backend.json`: Dockerfile, rutas observadas, healthcheck y política de reinicio del backend.
+- `railway.frontend.json`: la configuración equivalente para el frontend.
+- `railway.backend.env.example`: todas las variables y referencias requeridas por el backend.
+- `railway.frontend.env.example`: variables de red privada del frontend.
+
+Al crear cada servicio desde el mismo repositorio, elegí su archivo en **Settings → Config as Code → Config file**:
+
+```text
+/railway.backend.json
+/railway.frontend.json
+```
+
+Después pegá el archivo `.env.example` correspondiente en **Variables → RAW Editor**. Railway no admite variables
+de servicio dentro de Config as Code: `railway.json` sólo configura build y deploy. Los archivos importables evitan
+tener que descubrir o transcribir variables una por una.
+
+Los nombres esperados son `Postgres`, `gastnyahp-backend` y `gastnyahp-frontend`, porque las referencias usan esos
+nombres. Si un servicio tiene otro nombre, renombralo o actualizá el namespace en los dos archivos de variables.
+
+`Admin__ApiKey=${{secret(64)}}` usa la función de secretos de las plantillas de Railway. Si el RAW Editor no evalúa
+funciones de plantilla en un proyecto ya creado, reemplazá únicamente ese valor por un secreto aleatorio de 64
+caracteres y sellalo desde el menú de la variable. No lo guardes en Git.
+
 Railway **no corre `docker-compose.yml`**: cada servicio del compose se vuelve un servicio Railway aparte. Esta
 guía arma esos tres servicios a mano una sola vez. El compose se mantiene intacto y sigue siendo la forma de
 correr todo en local — no se toca nada de lo que ya usás.
